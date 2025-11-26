@@ -1,0 +1,44 @@
+# Executables
+*.exe
+*.out
+*.app
+
+# Compiled object files
+*.o
+*.obj
+
+# Debug files
+*_debug*
+
+# Generated folders
+bin/
+output/
+results/
+
+# Generated puzzle files (they are auto-generated)
+puzzles/*.txt
+
+# Log files
+*.log
+
+# CSV results
+*.csv
+
+# VS Code
+.vscode/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
