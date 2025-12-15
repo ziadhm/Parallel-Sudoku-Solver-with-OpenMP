@@ -1,67 +1,120 @@
-# Parallel Sudoku Solver
+# Parallel Sudoku Solver with OpenMP
 
-My submission for the OpenMP assignment. This project solves Sudoku puzzles using both serial and parallel approaches.
+A high-performance Sudoku solver implementation comparing serial and parallel approaches using OpenMP. This project explores different parallelization strategies and analyzes their performance characteristics.
 
-## What's Inside
+## Features
 
-- `sudoku_advanced.c` - Main solver with 3 different parallel implementations
-- `run_tests.bat` - Script to run all tests (takes a few minutes)
-- `analyze_results.py` - Parses test results and generates tables
-- `visualize_results.py` - Creates graphs from the data
-- `report.html` - Full write-up with analysis
+- **Multiple Parallel Implementations**: Three different OpenMP-based parallel approaches
+- **Performance Analysis**: Comprehensive benchmarking and visualization tools
+- **Optimized Serial Baseline**: Efficient constraint propagation with backtracking
+- **Automated Testing**: Complete test suite with multiple thread configurations
 
-## How to Build and Run
+## Project Structure
 
+- `sudoku_advanced.c` - Main solver with 3 parallel implementations
+- `sudoku.c` - Serial implementation baseline
+- `benchmark.c` - Performance benchmarking utilities
+- `run_tests.bat` - Automated test suite runner
+- `analyze_results.py` - Results parser and statistical analysis
+- `visualize_results.py` - Performance visualization generator
+
+## Prerequisites
+
+### Compiler
+- GCC with OpenMP support (MinGW-w64 on Windows)
+- MSVC with OpenMP support (alternative for Windows)
+
+### Python Dependencies
 ```bash
-# Compile everything
-make
-
-# Run the test suite (tests with 1, 2, 4, and 8 threads)
-run_tests.bat
-
-# Generate analysis and graphs
-python analyze_results.py
-python visualize_results.py
-
-# View the report
-start report.html
+pip install pandas matplotlib seaborn
 ```
 
-## The Three Parallel Versions
+## Building
 
-1. **Version 1 (Tasks)**: Uses OpenMP tasks with work stealing
-2. **Version 2 (Parallel For)**: Uses parallel for loops 
-3. **Version 3 (Hybrid)**: Combines both based on puzzle difficulty
+### Using Make (Linux/WSL/MinGW)
+```bash
+make
+```
 
-## Results
+### Using Build Script (Windows)
+```cmd
+build.bat
+```
 
-Honestly the speedups aren't as good as I hoped, but I understand why now:
-- Easy puzzles are too fast - parallel overhead makes them slower
-- Hard puzzles show some improvement (AI Escargot is the best test case)
-- Task-based approach (V1) works better than parallel for (V2)
+## Running
 
-The problem is that 9x9 Sudoku isn't really big enough to benefit much from parallelization, especially with my constraint propagation optimizations that solve most of the puzzle before backtracking even starts.
+### Execute Test Suite
+```bash
+# Windows
+run_tests.bat
 
-## Files Generated
+# Linux/WSL
+./run_tests.sh
+```
 
-After running tests you'll get:
-- `results/test_results.txt` - Raw output from all test runs
-- `results/performance_data.csv` - CSV for making graphs
-- `results/performance_graphs.png` - 4 graphs showing performance
+The test suite runs benchmarks with 1, 2, 4, and 8 threads across various puzzle difficulties.
 
-## Notes
+### Generate Analysis and Visualizations
+```bash
+python analyze_results.py
+python visualize_results.py
+```
 
-- Needs GCC with OpenMP support
-- Python packages needed: pandas, matplotlib, seaborn
-- The timer only has millisecond precision so super fast puzzles show 0.000000 sec
-- All parallel versions are verified to produce correct solutions
+### View Results
+```bash
+# Windows
+start report.html
 
-## What I Learned
+# Linux
+xdg-open report.html
+```
 
-- Parallelization has overhead - not everything gets faster
-- Problem size matters a lot
-- Load balancing is important (work stealing helps)
-- Sometimes making the serial version too good limits parallel opportunities
+## Parallel Implementations
+
+### Version 1: Task-Based Parallelism
+Uses OpenMP task directives with dynamic work stealing for load balancing. Best suited for irregular workloads where puzzle complexity varies significantly.
+
+### Version 2: Parallel For Loops
+Employs OpenMP parallel for constructs to distribute search space iterations. More structured approach with lower overhead but less flexible load balancing.
+
+### Version 3: Hybrid Approach
+Dynamically selects between task-based and parallel for strategies based on puzzle difficulty metrics, attempting to leverage strengths of both approaches.
+
+## Performance Characteristics
+
+Key findings from the benchmarking analysis:
+
+- **Parallel Overhead**: Simple puzzles show slowdown due to parallelization overhead exceeding computation time
+- **Scalability**: Complex puzzles (e.g., AI Escargot) demonstrate measurable speedup with multiple threads
+- **Algorithm Trade-offs**: Task-based approach generally outperforms parallel for due to better load balancing
+- **Problem Size**: 9×9 Sudoku grid limits parallelization benefits; constraint propagation solves most cells before backtracking
+
+## Output Files
+
+After running the test suite, the following files are generated in the `results/` directory:
+
+- `test_results.txt` - Raw benchmark output from all test runs
+- `performance_data.csv` - Structured data for analysis
+- `performance_graphs.png` - Performance comparison visualizations
+
+## Technical Notes
+
+- Timing precision: Millisecond resolution (very fast solves may show 0.000000 seconds)
+- Solution verification: All parallel implementations produce identical correct solutions
+- Thread scaling: Tested with 1, 2, 4, and 8 threads
+- Puzzle set: Includes easy, medium, hard, and expert-level puzzles
+
+## Lessons Learned
+
+- Parallelization introduces overhead that must be justified by computational workload
+- Problem size significantly impacts parallel efficiency
+- Effective load balancing strategies are crucial for irregular workloads
+- Algorithm optimizations can reduce parallelization opportunities
+
+## License
+
+This project is available for educational purposes.
 
 ---
-*Assignment 1 - Parallel Programming Course - 2025*
+
+*Parallel Programming with OpenMP - 2025*
