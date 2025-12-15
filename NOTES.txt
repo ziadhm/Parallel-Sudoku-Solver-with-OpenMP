@@ -1,0 +1,59 @@
+NOTES - Things I figured out while working on this
+
+OpenMP Task gotchas:
+- Need #pragma omp single around task creation loop
+- Tasks created too deep in recursion = terrible performance
+- Work stealing is automatic but only helps if you create enough tasks
+
+Parallel For issues:
+- Static schedule doesn't work well - some threads finish way before others
+- Dynamic schedule helps but has overhead
+- Not good for irregular workloads like backtracking
+
+Constraint propagation techniques:
+- Naked singles: easiest, just fill cells with 1 candidate
+- Hidden singles: look for numbers that can only go one place
+- Naked pairs: took forever to implement, helps a bit
+- Pointing pairs: not sure this one does much
+
+Problems I ran into:
+- Timer resolution is bad for fast puzzles
+- Had to copy grid for each thread (memory intensive)
+- Synchronization overhead is significant
+- Easy puzzles solve so fast that parallel makes them slower
+
+Things that surprised me:
+- V2 (parallel for) actually performs WORSE with more threads
+- AI Escargot puzzle has 78 backtracks but still solves pretty fast
+- My optimizations work TOO well - puzzle mostly solved before backtracking
+
+Speedup analysis:
+- Easy: 0 backtracks, no speedup (overhead kills it)
+- Medium: 0 backtracks, no speedup
+- AI Escargot: 78 backtracks, best case for parallelization
+- Platinum: 12 backtracks, mixed results
+
+Thread scaling:
+- 1 thread = baseline
+- 2 threads = minimal improvement
+- 4 threads = AI Escargot shows 1.0x (not losing performance at least)
+- 8 threads = worse for V2, same for V1/V3
+
+Ideas I didn't have time for:
+- Test with 16x16 Sudoku (bigger problem = better speedup probably)
+- GPU version with CUDA
+- Better memory management (reduce copying)
+- Adaptive thread count based on puzzle difficulty
+- Profile to find actual bottlenecks
+
+Lessons learned:
+- Always measure, don't assume parallel = faster
+- Overhead is real
+- Problem size matters more than I thought
+- Sometimes serial with good optimizations beats naive parallel
+
+For the report:
+- Be honest about limited speedups
+- Explain WHY it's limited (overhead, problem size)
+- Focus on what I learned, not just results
+- Include all measurements even if not impressive

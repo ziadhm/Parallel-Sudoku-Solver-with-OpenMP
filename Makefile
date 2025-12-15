@@ -1,3 +1,6 @@
+# Makefile for compiling the Sudoku solver
+# Just run 'make' to build everything
+
 CC = gcc
 CFLAGS = -fopenmp -O3 -Wall -march=native -ffast-math
 CFLAGS_DEBUG = -fopenmp -g -Wall -O0
@@ -7,24 +10,30 @@ TARGET_BENCHMARK = bin/sudoku_benchmark
 
 all: bin $(TARGET_BASIC) $(TARGET_ADVANCED) $(TARGET_BENCHMARK)
 
+# Create directories if they don't exist
 bin:
 	@if not exist bin mkdir bin
 	@if not exist puzzles mkdir puzzles
 	@if not exist results mkdir results
 	@if not exist output mkdir output
 
+# Basic version
 $(TARGET_BASIC): sudoku.c
 	$(CC) $(CFLAGS) -o $(TARGET_BASIC) sudoku.c
 
+# Main version with all parallel implementations
 $(TARGET_ADVANCED): sudoku_advanced.c
 	$(CC) $(CFLAGS) -o $(TARGET_ADVANCED) sudoku_advanced.c
 
+# Benchmark version
 $(TARGET_BENCHMARK): benchmark.c
 	$(CC) $(CFLAGS) -o $(TARGET_BENCHMARK) benchmark.c
 
+# Debug build (no optimizations)
 debug: sudoku_advanced.c
 	$(CC) $(CFLAGS_DEBUG) -o bin/$(TARGET_ADVANCED)_debug sudoku_advanced.c
 
+# Clean up compiled files
 clean:
 	del /Q bin\*.exe 2>nul || echo Clean complete
 	del /Q results\*.txt results\*.csv 2>nul || echo Results clean complete

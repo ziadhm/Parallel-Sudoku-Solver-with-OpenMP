@@ -10,7 +10,7 @@ REM Create directories
 if not exist bin mkdir bin
 if not exist puzzles mkdir puzzles
 if not exist results mkdir results
-if not exist output mkdir output
+
 
 echo [1/3] Compiling basic sudoku solver...
 gcc -fopenmp -O3 -Wall -march=native -ffast-math -o bin\sudoku.exe sudoku.c

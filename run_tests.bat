@@ -1,18 +1,18 @@
 @echo off
-REM Comprehensive Testing Script for Sudoku Solver
-REM Run all tests with different thread counts and generate reports
+REM Test script - runs the solver with different thread counts
+REM This takes a while to complete
 
 echo ========================================
-echo Advanced Sudoku Solver - Test Suite
+echo Sudoku Solver Test Suite
 echo ========================================
 echo.
 
-REM Generate puzzles
+REM First generate the test puzzles if they don't exist
 echo [1/5] Generating test puzzles...
 bin\sudoku_advanced.exe generate
 echo.
 
-REM Test with 1 thread
+REM Run with 1 thread first
 echo [2/5] Testing with 1 thread...
 set OMP_NUM_THREADS=1
 echo === 1 THREAD === > results\test_results.txt

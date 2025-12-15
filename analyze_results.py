@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""
-Performance Analysis Tool for Sudoku Solver
-Extracts timing data and generates tables/graphs for report
-"""
+# Script to parse test results and generate tables
+# This reads the output from run_tests.bat and makes it readable
 
 import re
 import sys
 from collections import defaultdict
 
 def parse_results(filename):
-    """Parse test_results.txt and extract performance data"""
+    # Read the test results file and pull out the important numbers
     results = defaultdict(lambda: defaultdict(dict))
     
     try:
@@ -21,7 +19,7 @@ def parse_results(filename):
         return None
     
     # Parse by thread count sections
-    thread_sections = re.split(r'=== (\d+) THREADS ===', content)
+    thread_sections = re.split(r'=== (\d+) THREADS? ===', content)
     
     for i in range(1, len(thread_sections), 2):
         threads = int(thread_sections[i])
@@ -29,10 +27,10 @@ def parse_results(filename):
         
         # Find puzzle sections
         puzzles = {
-            'Easy': re.search(r'Easy Puzzle:(.*?)(?=Medium|AI|Platinum|===|$)', section, re.DOTALL),
-            'Medium': re.search(r'Medium Puzzle:(.*?)(?=Easy|AI|Platinum|===|$)', section, re.DOTALL),
-            'AI Escargot': re.search(r'AI Escargot:(.*?)(?=Easy|Medium|Platinum|===|$)', section, re.DOTALL),
-            'Platinum': re.search(r'Platinum Blonde:(.*?)(?=Easy|Medium|AI|===|$)', section, re.DOTALL)
+            'Easy': re.search(r'Easy Puzzle:(.*?)(?=Medium Puzzle:|AI Escargot:|Platinum Blonde:|$)', section, re.DOTALL),
+            'Medium': re.search(r'Medium Puzzle:(.*?)(?=Easy Puzzle:|AI Escargot:|Platinum Blonde:|$)', section, re.DOTALL),
+            'AI Escargot': re.search(r'AI Escargot:(.*?)(?=Easy Puzzle:|Medium Puzzle:|Platinum Blonde:|$)', section, re.DOTALL),
+            'Platinum': re.search(r'Platinum Blonde:(.*?)(?=Easy Puzzle:|Medium Puzzle:|AI Escargot:|$)', section, re.DOTALL)
         }
         
         for puzzle_name, match in puzzles.items():
@@ -40,10 +38,10 @@ def parse_results(filename):
                 puzzle_data = match.group(1)
                 
                 # Extract timing data
-                serial_time = re.search(r'Serial:\s+([\d.]+)\s+sec', puzzle_data)
-                v1_speedup = re.search(r'Parallel V1:.*?Speedup:\s+([\d.]+|nan\(ind\))x', puzzle_data, re.DOTALL)
-                v2_speedup = re.search(r'Parallel V2:.*?Speedup:\s+([\d.]+)x', puzzle_data, re.DOTALL)
-                v3_speedup = re.search(r'Parallel V3:.*?Speedup:\s+([\d.]+)x', puzzle_data, re.DOTALL)
+                serial_time = re.search(r'=== SERIAL VERSION ===.*?Time taken:\s+([\d.]+)\s+seconds', puzzle_data, re.DOTALL)
+                v1_speedup = re.search(r'=== PARALLEL V1.*?Speedup:\s+([\d.]+|nan\(ind\)|-nan\(ind\))x', puzzle_data, re.DOTALL)
+                v2_speedup = re.search(r'=== PARALLEL V2.*?Speedup:\s+([\d.]+)x', puzzle_data, re.DOTALL)
+                v3_speedup = re.search(r'=== PARALLEL V3.*?Speedup:\s+([\d.]+)x', puzzle_data, re.DOTALL)
                 
                 backtracks = re.search(r'Backtracks:\s+(\d+)', puzzle_data)
                 
@@ -64,7 +62,7 @@ def parse_results(filename):
     return results
 
 def generate_markdown_table(results):
-    """Generate markdown table for report"""
+    # Print out a nice markdown table
     print("\n## Performance Results Table\n")
     print("| Threads | Puzzle | Serial Time (s) | V1 Speedup | V2 Speedup | V3 Speedup | Backtracks |")
     print("|---------|--------|-----------------|------------|------------|------------|------------|")
@@ -73,12 +71,13 @@ def generate_markdown_table(results):
         for puzzle in ['Easy', 'Medium', 'AI Escargot', 'Platinum']:
             if puzzle in results[threads]:
                 data = results[threads][puzzle]
+                # Format the numbers nicely
                 print(f"| {threads:7} | {puzzle:14} | {data.get('serial_time', 0):15.6f} | "
                       f"{data.get('v1_speedup', 0):10.2f} | {data.get('v2_speedup', 0):10.2f} | "
                       f"{data.get('v3_speedup', 0):10.2f} | {data.get('backtracks', 0):10} |")
 
 def generate_csv(results, filename='results/performance_data.csv'):
-    """Generate CSV file for graphing"""
+    # Save to CSV so we can make graphs in Excel
     with open(filename, 'w') as f:
         f.write("Threads,Puzzle,Serial Time,V1 Speedup,V2 Speedup,V3 Speedup,Backtracks\n")
         
@@ -91,13 +90,13 @@ def generate_csv(results, filename='results/performance_data.csv'):
                            f"{data.get('v3_speedup', 0):.2f},{data.get('backtracks', 0)}\n")
     
     print(f"\n✓ CSV data saved to {filename}")
-    print("  Import into Excel/Google Sheets for graphing")
+    print("  You can open this in Excel/Sheets to make graphs")
 
 def generate_summary(results):
-    """Generate summary statistics"""
+    # Print some overall stats and insights
     print("\n## Summary Statistics\n")
     
-    # Best speedups
+    # Find the best speedups
     best_speedups = {}
     for threads in results:
         for puzzle in results[threads]:

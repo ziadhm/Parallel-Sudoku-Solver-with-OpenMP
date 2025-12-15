@@ -1,3 +1,6 @@
+// Sudoku Solver with OpenMP parallelization
+// Three different parallel approaches: tasks, parallel for, and hybrid
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +12,7 @@
 #define UNASSIGNED 0
 #define MAX_THREADS 16
 
-// Performance statistics structure
+// Stats tracking - keeps count of backtracks, techniques used, etc.
 typedef struct {
     unsigned long long backtrack_count;
     unsigned long long naked_singles_found;
@@ -22,17 +25,17 @@ typedef struct {
     int thread_id;
 } SolverStats;
 
-// Bitset for candidate tracking (9 bits for digits 1-9)
+// Using bitsets for candidate tracking - more efficient than arrays
 typedef unsigned short CandidateSet;
 
-// Grid with candidates
+// Main grid structure
 typedef struct {
     int cells[N][N];
-    CandidateSet candidates[N][N];
+    CandidateSet candidates[N][N];  // possible values for each cell
     int empty_cells;
 } SudokuGrid;
 
-// Function prototypes
+// Function declarations
 int solve_serial(SudokuGrid *grid, SolverStats *stats);
 int solve_parallel_v1(SudokuGrid *grid, SolverStats *stats);
 int solve_parallel_v2(SudokuGrid *grid, SolverStats *stats);
@@ -104,18 +107,20 @@ int get_candidate(CandidateSet cand, int index) {
     return 0;
 }
 
-// ========== Grid Initialization ==========
+// ========== Grid Setup Functions ==========
 
 void init_grid(SudokuGrid *grid) {
     memset(grid->cells, 0, sizeof(grid->cells));
+    // Set all candidates to 0x1FF (binary 111111111 = all 9 numbers possible)
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            grid->candidates[i][j] = 0x1FF; // All 9 bits set
+            grid->candidates[i][j] = 0x1FF;
         }
     }
     grid->empty_cells = N * N;
 }
 
+// Copy one grid to another - needed for parallel branches
 void copy_grid(SudokuGrid *src, SudokuGrid *dst) {
     memcpy(dst->cells, src->cells, sizeof(src->cells));
     memcpy(dst->candidates, src->candidates, sizeof(src->candidates));
@@ -123,18 +128,18 @@ void copy_grid(SudokuGrid *src, SudokuGrid *dst) {
 }
 
 void init_candidates(SudokuGrid *grid) {
-    // Initialize all candidates to full
+    // First pass - mark all empty cells with all possibilities
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             if (grid->cells[i][j] == UNASSIGNED) {
-                grid->candidates[i][j] = 0x1FF;
+                grid->candidates[i][j] = 0x1FF;  // all numbers possible
             } else {
-                grid->candidates[i][j] = 0;
+                grid->candidates[i][j] = 0;  // already filled
             }
         }
     }
     
-    // Eliminate candidates based on existing values
+    // Second pass - eliminate based on what's already placed
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             if (grid->cells[i][j] != UNASSIGNED) {
@@ -455,6 +460,7 @@ int solve_with_techniques(SudokuGrid *grid, SolverStats *stats) {
     return 0;
 }
 
+// Serial version - just regular backtracking with constraint propagation
 int solve_serial(SudokuGrid *grid, SolverStats *stats) {
     memset(stats, 0, sizeof(SolverStats));
     stats->thread_id = 0;
@@ -467,24 +473,27 @@ int solve_serial(SudokuGrid *grid, SolverStats *stats) {
     return result;
 }
 
-// ========== Parallel Version 1: Task-based with Work Stealing ==========
+// ========== Parallel Version 1: OpenMP Tasks ==========
+// This uses work stealing - idle threads grab work from busy ones
 
 int solve_parallel_v1_helper(SudokuGrid *grid, SolverStats *stats, int depth) {
     stats->nodes_explored++;
     
+    // Try constraint propagation first
     if (apply_constraint_propagation(grid, stats)) {
         return 1;
     }
     
     int row, col;
     if (!find_best_cell(grid, &row, &col)) {
-        return 0;
+        return 0;  // no solution
     }
     
     CandidateSet cands = grid->candidates[row][col];
     int num_cands = count_candidates(cands);
     
-    // Parallelize at shallow depths only
+    // Only parallelize near the top of the search tree (depth < 2)
+    // Otherwise overhead kills performance
     if (depth < 2 && num_cands > 2) {
         int solved = 0;
         SudokuGrid solution;
